@@ -1,0 +1,88 @@
+This is a simple program to print envelopes using postscript.  It requires a
+postscript capable printer, or one supported by ghostscript, and PERL.  I have 
+tested the program on a HP Laserjet 4P.
+
+I make no claims as to the usefulness of this program for any particular
+purpose.  Feel free to modify it and distribute those modifications, just give
+me credit for my code.  I'd appreciate any enhancements or ideas you send my
+way.
+
+
+Use:
+
+- By default, values in your ~/.enveloperc file are used to define envelope
+  sizes and fonts.  The data for each envelope comes from simple text files and
+  optionally from a return address file (specified in .enveloperc, [options], or
+  [optionfile])
+
+
+- Each envelope text file contains up to five sets of data.   These are:
+
+  [to]         - The mailing address.  For the first block in a definition
+                 file, this is the default.  In other words, if you put the 
+                 "to" address at the beginning of your file, you don't need to
+                 use the [to] identifier.
+  [from]       - Your return address.  Defaults to data contained in $fromfile
+  [options]    - any .enveloperc options you wish to override for this envelope
+  [optionfile] - same as [options] section, but contains a single
+                 line with a file name.  The config options from that file are 
+                 used exactly as if they were part of an [options] section.
+  [dp xx]      - This is a temporary hack to enable the "Delivery Point"
+                 portion of a full POSTNET Delivery Point Barcode.  Replace
+                 "xx" with the Delivery Point.  More information on DPBC's can
+                 be obtained from the   USPS website, http://www.usps.com/  The
+                 information is contained in publication 25.  Note that you do 
+                 not need to do anything special to create zip or zip+4
+                 barcodes.  The program automatically detects these.
+ 
+  see the files in the /examples directory of the distribution archive for
+  example address files
+
+
+- Option overrides work in the following order:
+
+                .enveloperc --> [optionfile] --> [options]
+  
+  so...you can set base settings in .enveloperc, change some of them in
+  [optionfile], and change these again or add others with [options].  The
+  addresses in $fromfile vs. [from] work the same way.  Basically the settings
+  in your envelope definition file always have the final say.
+
+
+- By default, the fonts defined in ~/.enveloperc are used.  These can be
+  overridden, however, for each envelope file.  Any single line containing only
+  <fontname pointsize> will change the font for the remainder of the address
+  block.  This works in the $fromfile as well.  See the sample files for 
+  examples on this.
+
+
+- When you have a ~/.enveloperc and an address file (or group of files) to 
+  print simply:
+		envelope file [file...] | lpr
+	or
+		envelope file [file...] > somefile.txt
+	etc.
+
+
+- You can set your own variables and perform calculations within the
+  .enveloperc file, within the [options] section of each envelope
+  description file, and within your [optionfile].
+
+
+
+
+Known Bugs:
+
+- When changing fonts, the point size from the old font is used to move to the
+  next line in the block.  The program does not "look ahead" to see how far
+  it should be moving down to accomodate the next font.  This results in extra
+  space when transitioning from a big font to a smaller font, or not enough 
+  space if transitioning from a smaller font to a bigger font.  To keep things
+  looking "perfect," just use the same point size throughout an address block.
+
+
+
+Contact Info:
+
+- Email:  gspath@freefall.homeip.net
+- Web:    http://freefall.homeip.net/

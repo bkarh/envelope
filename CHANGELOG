@@ -1,0 +1,33 @@
+envelope Changelog:
+------------------
+
+0.50
+Initial Release
+
+0.51
+Per Envelope Options
+
+0.52
+Shipping Label Option.  
+Set $shiplabel = 1 in .enveloperc  or [options] section to enable.
+
+0.53
+Added option file parsing to the envelope definition file and created
+standard envelope size config files.
+
+0.60 
+Added POSTNET barcode support.  Set $barcode = 1 in .enveloperc or in
+[options] section to enable.
+
+0.62
+ - $fromfile option allows loading a default return address.
+ - Automatic [to] address, so no longer necessary to provide any options in an
+   address file.
+ - Added a method to specify Delivery Point code for a complete POSTNET
+   Delivery Point Barcode 
+
+1.0.0
+Last planned release, other than bugfixes.  This version adds the following:
+ - POSTNET codes can now be placed at the standard bottom right of the envelope
+ - A warning is generated if you try to define a delivery point without a full
+   zip+4 zipcode.      

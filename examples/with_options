@@ -1,0 +1,17 @@
+[options]
+# This is for printing on pre-printed envelopes for my bank
+# Note how you can put calculations right in the config.  
+# Neat, huh? :)
+
+$ewidth=8.75 + 0.25/2
+$eheight=3.75 + 0.25/2
+$leftmargin=0.25 + 1/16
+$topmargin=0.25 + 1/8
+$return1 = "Times-Roman-Bold 12"
+$returnx = "Times-Roman 12"
+
+
+[from]
+My Name
+My Address
+My City, State, Zip

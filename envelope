@@ -1,0 +1,334 @@
+#!/usr/bin/perl -w
+
+# Envelope 
+# Version 1.0.0 
+# Gregory Spath, gspath@homeip.net
+# http://freefall.homeip.net
+
+# Revision History
+#              1.0.0 -   Final planned release.  A couple fixes, barcode
+#                        placement changed to bottom right of envelope.
+#              0.62  -   Hack to add Delivery Point to barcode, $fromfile
+#                        config option, see changelog for other changes
+#              0.60  -   POSTNET A & C field support
+#              0.53  -   Added [optionfile] section
+#              0.52  -   Added shipping label option
+#              0.51  -   Added per envelope options
+#              0.50  -   Initial Release
+
+$filenum = 0;
+# $files = $#ARGV + 1;
+
+
+# Load default envelope config
+defaults();
+calc();
+
+
+# Ok, now we are ready to make the envelopes
+foreach $file (@ARGV){
+	$filenum++;
+	open (ADDRESS, "$file") or die "Could not open $file.\n";
+
+	@mailto = ();
+	@mailfrom = ();
+	@options = ();
+	$state = 'to';
+	$optionfile = "";
+	$dpc = "";
+
+	while (<ADDRESS>){
+		chomp;
+		if ($_ eq '[options]') { $state = 'options'; next;}
+		if ($_ eq '[to]') { $state = 'to'; next;}
+		if ($_ eq '[from]') { $state = 'from'; $fromfile=""; next; }
+		if ($_ eq '[optionfile]') { $state = 'optionfile'; next; }
+		if ($_ =~ /^\[dp (\d{2})\]$/){ $state = 'dpc'; $dpc = $1; next; }
+		
+		next if ($_ eq "");  #ignore blank lines
+
+		SWITCH: {
+			if ($state eq 'optionfile') {$optionfile = $_; $state = ''; last SWITCH;}
+			if ($state eq 'options') { push @options, $_; last SWITCH;}
+			if ($state eq 'to') { push @mailto, $_; last SWITCH;}
+			if ($state eq 'from') { push @mailfrom, $_; last SWITCH;}
+		}
+	}
+
+	close ADDRESS;
+
+
+# Load options from file if specified
+	if ($optionfile){
+		open (OPTIONFILE, "<$optionfile") or die "Cannot open specified option file: $optionfile\n";
+		while ($option  = <OPTIONFILE>){
+			chomp $option;
+			eval $option;
+		}
+		close (OPTIONFILE);
+		calc();
+	}
+
+
+# Load return address from file if specified
+	if ($fromfile){
+		open (FROMFILE, "<$fromfile") or die "Cannot open specified return address file: $fromfile\n";
+		while ($line = <FROMFILE>){
+			chomp $line;
+			push @mailfrom, $line;
+		}
+	}
+	close (FROMFILE);
+
+
+
+# Set per envelope options
+	foreach $option (@options){
+		eval $option;
+		calc();
+	}	
+
+# Got all the data...now start printing
+	print "%!\n";
+	print "% Greg's envelope printer\n";
+
+	print "newpath\n";
+
+	if ($shiplabel){
+		$i = int($x0 + $leftmargin * 72);
+		$j = int($y0 - $topmargin * 72); 
+	} else {
+		$i = int($x0 + $topmargin * 72);
+		$j = int($y0 + $leftmargin * 72);
+	}
+
+# Set our coordinate system
+	print "$i $j translate\n";
+
+	print "90 rotate\n" unless ($shiplabel);
+
+
+# Print the Return Address
+	$linepos = 0;
+	$whichline=0;
+	foreach $line (@mailfrom){
+		$whichline++;
+		if ($whichline == 1 && $line !~ /^<(\S+)\s+(\d+)>$/){
+			print "/$return1font findfont $return1pointsize scalefont setfont\n";
+			$pointsize = $return1pointsize;
+		}
+		if ($whichline == 2 && $line !~ /^<(\S+)\s+(\d+)>$/){
+			print "/$returnxfont findfont $returnxpointsize scalefont setfont\n";
+			$pointsize = $returnxpointsize;
+		}
+		if ($line =~ /^\s*<(\S+)\s+(\d+)>$/){
+			$font = $1;
+			$pointsize = $2;
+			print "/$font findfont $pointsize scalefont setfont\n";
+			$whichline++;
+			next;
+		}
+		print "0 $linepos moveto\n";
+		print "($line) show\n";
+		$linepos = $linepos - $pointsize;
+	}
+
+	if ($shiplabel){
+		$xpos = 0;
+		$ypos = $linepos - $pointsize * 2;
+	} else {
+		$xpos = int(0.40*72*$ewidth);
+		$ypos = int(-0.40*72*$eheight);
+	}
+
+# Print the Mailing Address
+	$whichline=0;
+	$fullzip='';
+	foreach $line (@mailto){
+		$whichline++;
+		if ($whichline == 1 && $line !~ /^<(\S+)\s+(\d+)>$/){
+			print "/$line1font findfont $line1pointsize scalefont setfont\n";
+			$pointsize = $line1pointsize;
+		}
+		if ($whichline == 2 && $line !~ /^<(\S+)\s+(\d+)>$/){
+			print "/$linexfont findfont $linexpointsize scalefont setfont\n";
+			$pointsize = $linexpointsize;
+		}
+		if ($line =~ /^<(\S+)\s+(\d+)>$/){
+			$font = $1;
+			$pointsize = $2;
+			print "/$font findfont $pointsize scalefont	setfont\n";
+			$whichline++;
+			next;
+		}
+		print "$xpos $ypos moveto\n";
+		print "($line) show\n";
+		$ypos = $ypos - $pointsize;
+	
+		if ($line =~ /.*(\d{5})-?(\d{4})?$/){
+			$fullzip = $1 if $1;
+			$fullzip .= $2 if $2;
+		}
+	}
+
+# Print the barcode
+	if (length $fullzip == 9){
+		$fullzip .= $dpc;
+	} elsif ($dpc){
+		print STDERR "Delivery point codes for non ZIP+4 codes don't make sense.\n";
+		print STDERR "Ignoring Delivery Point code.\n";
+	}
+
+	if ($shiplabel || $bcaddressblock){
+		$ypos = $ypos - 0.125 * 72;
+	} else {
+		$xpos = int(($ewidth-3.875)*72);
+		$ypos = int((-1.0 * $eheight + 0.375)*72);
+	}
+
+	barcode($fullzip, $xpos, $ypos) if ($fullzip && $barcode);
+	print "showpage\n";
+
+#	if ($prompt && $filenum != $files){
+#		print STDERR "Done with $filenum / $files\n";
+#		print STDERR "Bang a key to print the next Envelope when ready";
+#		$hitme = <STDIN>;
+#		print STDERR "\n";
+#	} else {
+#		print "** Done **\n" if ($filenum == $files);
+#	}
+
+# Reset the values from the rc file, in case we have switched them for this
+# envelope
+
+	defaults();
+	calc();
+}
+
+sub calc {
+	if ($shiplabel){
+		$x0 = 0.25 * 72;
+		$y0 = ($normalpaper) * 72;
+	} else {
+		$x0 = 0;  								#envelope X origin   
+		$y0 = ($normalpaper - $ewidth) * 72; 	#envelope Y origin 
+	} 
+
+	($line1font, $line1pointsize) = split(" ", $line1);
+	($linexfont, $linexpointsize) = split(" ", $linex);
+
+	($return1font, $return1pointsize) = split(" ", $return1);
+	($returnxfont, $returnxpointsize) = split(" ", $returnx);
+}
+
+sub defaults {
+		$line1 = "Times-Roman-Bold 12";
+		$linex = "Times-Roman 12";
+
+		$return1 = "Times-Roman-Bold 10";
+		$returnx = "Times-Roman 10";
+
+		$ewidth = 9.5;
+		$eheight = 4.125;
+		$normalpaper = 11;
+		$leftmargin = 0.25;
+		$topmargin = 0.30;
+
+		$barcode = 1;
+		$bcaddressblock = 0;
+
+		$rcfile = "$ENV{HOME}/.enveloperc";
+		$shiplabel = 0;
+		$fromfile = "";
+
+		$noconfig = 0;
+
+		# $hitme = "";
+		# $prompt = 1;
+
+		# load rc file
+
+		$rc = open(CONFIG, "<$rcfile");
+		if (!$rc){
+			$noconfig = 1;
+			print STDERR "Could not open $rcfile, using default envelope values.\n";
+		} else {
+			while ($command = <CONFIG>){
+				chomp $command;
+				$command =~ tr/"/'/;			# accidental re-assign protection
+				eval $command;
+			}	
+			close (CONFIG);
+		}
+}
+
+
+sub barcode{
+	my @code = (
+		[1, 1, 0, 0, 0],	# 0
+		[0, 0, 0, 1, 1],	# 1
+		[0, 0, 1, 0, 1],	# 2
+		[0, 0, 1, 1, 0],	# 3
+		[0, 1, 0, 0, 1],	# 4
+		[0, 1, 0, 1, 0],	# 5
+		[0, 1, 1, 0, 0],	# 6
+		[1, 0, 0, 0, 1],	# 7
+		[1, 0, 0, 1, 0],	# 8
+		[1, 0, 1, 0, 0],	# 9
+	);
+
+	my $zipcode = shift;
+	my $xpos = shift;
+	my $ypos = shift;
+	my @ziparray = ();
+
+	my $zipsum = 0;
+	for ($i = 0; $i<length($zipcode); $i++){
+		$ziparray[$i] = substr($zipcode, $i, 1);
+		$zipsum += $ziparray[$i];
+	}
+
+	my $correctcode = 10 - $zipsum % 10;
+	$correctcode = 0 if $correctcode == 10;
+	push @ziparray, $correctcode;
+
+# Set our barcode dimensions to the POSTNET spec.
+# Width = 0.02"
+# Space between CL's (pitch) = 0.05"
+# Height of 1's = 0.125"
+# Height of 0's = 0.05"
+	my $pitch = 3.6; #points
+	my $linewidth = 1.44; #points
+	my $height = 0;
+
+	my $pos = 0;
+	print "newpath\n";
+	print "$xpos $ypos translate\n";
+	print "$pos 0 moveto\n";
+	print "$linewidth setlinewidth\n";
+
+
+# Frame bar
+	$height = 0.125 * 72;
+	print "0 $height rlineto\n";	
+
+# Actual barcode
+	foreach $number (@ziparray){
+		for ($i = 0; $i <= 4; $i++){
+			$pos += $pitch;
+			print "$pos 0 moveto\n";
+			$line = $code[$number][$i];
+			$height = (0.05 + $line * 0.075) * 72;
+			print "0 $height rlineto\n";
+		}
+	}
+
+# Frame bar
+	$pos += $pitch;
+	print "$pos 0 moveto\n";
+	$height = 0.125 * 72;
+	print "0 $height rlineto\n";	
+
+
+	print "stroke\n";
+}

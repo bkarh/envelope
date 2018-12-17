@@ -1,0 +1,15 @@
+Installation:
+
+1) tar -zxvf envelope.tgz
+2) copy /envelope/samplerc to ~/.enveloperc and edit it to suit your needs
+3) copy envelope program to someplace in your path, if you like
+
+
+This program does work under Microsoft Windows (I tested with activestate perl)
+The only requirement is that you create a home environment variable, and put 
+.enveloperc in that directory.  For example:
+
+	copy c:\downloads\envelope\samplerc c:\home\.enveloperc
+	set home=c:\home
+	perl envelope address > output.txt
+	print output.txt

@@ -1,0 +1,50 @@
+# ~/.enveloperc
+
+# This file is interpreted in perl, so it is case sensitive
+# lines beginning with a '#' and blank lines are ignored.
+# All paper Attributes and Margin Units are in INCHES.
+# Use of any variables other than those already in this
+# sample file could cause problems.  You've been warned!
+
+
+# ------------------------------- Paper Attributes
+$normalpaper = 11 		# Use your printer's page size here
+$normalwidth = 8.5      # Printer's page width.
+$ewidth = 9.5           # Envelope Width
+$eheight = 4.125        # Envelope Height
+
+
+
+# ------------------------------- Margins
+# For printers that center the envelope on the feeder or put it all the way
+# to the right, you will need to make the top margin larger.   
+# The $feedleft, $feedcenter, and $feedright variables should take care of
+# this.  Just add the proper one to $topmargin.
+$feedleft = 0
+$feedright = $normalwidth - $eheight 
+$feedcenter = $normalwidth/2 - $eheight/2
+
+$leftmargin = 0.25
+$topmargin = 0.30 + $feedcenter
+
+
+
+# ------------------------------- General Settings
+$shiplabel = 0  # print labels in a single column for easy shipping labels
+$barcode = 1    # include POSTNET barcode for Zip or Zip+4?
+$bcaddressblock = 0 # put the POSTNET code with the address block?  If false,
+					# then the barcode will go to the standard bottom-right 
+                    # side of the envelope, otherwise it will be the last line
+                    # of the address block.
+$fromfile = ""  # file to load default return address from
+
+
+
+# ------------------------------- Default Label Attributes
+$line1 = "Times-Roman-Bold 12"  # Label font attributes, first line
+$linex = "Times-Roman 12"     	# Label font attributes, other lines
+
+
+# ------------------------------- Default Return Address Attributes
+$return1 = "Helvetica-Bold 10"	# same as above 
+$returnx = "Helvetica 10"	    # same as above

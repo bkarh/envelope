@@ -1,0 +1,23 @@
+Your Name
+PO Box 123
+Anytown, XX  12345-6789
+
+[dp 23]
+
+[options]
+# This is an example of the simplest address file you can use.  Notice you do
+# not need the "[to]" section so long as the address is the first block in the
+# file.  
+
+# This file also contains a delivery point code, so the entire POSTNET
+# barcode will be generated for this address.  
+
+# If you have a $fromfile
+# specified, your return address will come from that file for this address,
+# otherwise the return address will be blank.
+
+# If you have a $fromfile defined in your .enveloperc but want to override it,
+# use [from] in the address.  Yes, you can use a blank [from] section.
+
+# As you can see in this example, the [options] section is a good place for
+# comments.
